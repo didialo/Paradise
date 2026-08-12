@@ -1,0 +1,6 @@
+node_modules/
+.env
+paradise.db
+paradise.db-shm
+paradise.db-wal
+npm-debug.log*
