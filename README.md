@@ -367,6 +367,20 @@ If the bot token is exposed, regenerate it immediately through the Discord Devel
 
 This project is currently distributed as an open-source Paradise bot project.
 
+## 🔒 Code Modification Policy
+
+Paradise contains private, creator-specific functionality that is intentionally part of the bot's codebase.
+
+Do **not** remove, disable, modify, or intentionally bypass creator-specific systems without permission.
+
+This includes hidden or private functionality that may not be documented elsewhere in this README.
+
+If the creator becomes aware that a server has intentionally removed or disabled these systems without authorization, **that server may be permanently blacklisted from using Paradise.**
+
+By using Paradise, you agree to respect the bot's code and its creator-specific functionality.
+
+**In short:** Don't mess with the parts of Paradise that aren't yours to remove.
+
 ---
 
 # 🏜️ Paradise
