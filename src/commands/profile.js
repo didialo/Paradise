@@ -1,6 +1,9 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { getUser } = require('../database/database.js');
 
+// 💕 The one person who gets the special romance profile section.
+const YUME_USER_ID = '1257135233329922108';
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('profile')
@@ -27,13 +30,29 @@ module.exports = {
 
         const reputation = getReputation(user);
         const relationship = getRelationship(user);
-        const assessment = getAssessment(user, reputation, relationship);
+        const assessment = getAssessment(
+            user,
+            reputation,
+            relationship
+        );
 
-        await interaction.reply(
+        let profile =
             `**PARADISE FILE — ${target.username}**\n\n` +
             `🏷️ **Reputation:** ${reputation.name}\n` +
             `🤝 **Relationship:** ${relationship.name}\n` +
-            `❤️ **Trust:** ${relationship.trust}%\n\n` +
+            `❤️ **Trust:** ${relationship.trust}%\n`;
+
+        // 💕 Romance is only shown for the designated user.
+        if (target.id === YUME_USER_ID) {
+            const romance = getRomance(relationship.trust);
+
+            profile +=
+                `💕 **Romance:** ${romance.name}\n` +
+                `💘 **Affection:** ${romance.affection}%\n`;
+        }
+
+        profile +=
+            `\n` +
             `💬 **Messages:** ${user.messages}\n` +
             `🧍 **Commands used:** ${user.commands}\n` +
             `🚨 **Wanted notices:** ${user.wanted}\n` +
@@ -42,8 +61,9 @@ module.exports = {
             `🐕 **Barks:** ${user.barks}\n` +
             `📅 **Resident since:** ${formatDate(user.joined_at)}\n\n` +
             `**DUDE'S ASSESSMENT**\n` +
-            `*${assessment}*`
-        );
+            `*${assessment}*`;
+
+        await interaction.reply(profile);
     }
 };
 
@@ -55,7 +75,7 @@ function getReputation(user) {
 
     if (score >= 30) {
         return {
-            name: '💀 PARADISE\'S MOST WANTED',
+            name: "💀 PARADISE'S MOST WANTED",
             level: 5
         };
     }
@@ -88,7 +108,10 @@ function getReputation(user) {
 }
 
 function getRelationship(user) {
-    const trust = Math.max(0, Math.min(100, user.trust ?? 60));
+    const trust = Math.max(
+        0,
+        Math.min(100, user.trust ?? 60)
+    );
 
     if (trust >= 85) {
         return {
@@ -128,6 +151,48 @@ function getRelationship(user) {
     return {
         name: '💢 Absolutely Not',
         trust
+    };
+}
+
+function getRomance(trust) {
+    if (trust >= 95) {
+        return {
+            name: '💘 Completely Gone',
+            affection: 100
+        };
+    }
+
+    if (trust >= 90) {
+        return {
+            name: '💞 Hopelessly Attached',
+            affection: 95
+        };
+    }
+
+    if (trust >= 85) {
+        return {
+            name: '💕 Very Fond',
+            affection: 88
+        };
+    }
+
+    if (trust >= 75) {
+        return {
+            name: '💗 Getting Attached',
+            affection: 78
+        };
+    }
+
+    if (trust >= 60) {
+        return {
+            name: '💓 Curious',
+            affection: 65
+        };
+    }
+
+    return {
+        name: '🤍 Complicated',
+        affection: Math.max(25, trust)
     };
 }
 

@@ -101,7 +101,7 @@ client.once('clientReady', () => {
                 type: 0
             }
         ],
-        status: 'online'
+        status: 'idle'
     });
 });
 
