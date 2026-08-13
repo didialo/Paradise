@@ -22,6 +22,14 @@ db.exec(`
     )
 `);
 
+db.exec(`
+    CREATE TABLE IF NOT EXISTS blacklisted_guilds (
+        guild_id TEXT PRIMARY KEY,
+        guild_name TEXT NOT NULL,
+        blacklisted_at TEXT NOT NULL
+    )
+`);
+
 const columns = db
     .prepare('PRAGMA table_info(users)')
     .all()
@@ -198,7 +206,9 @@ function updatePassiveTrust(user) {
 
     if (!current) return;
 
-    const messageMilestone = Math.floor(current.messages / 25);
+    const messageMilestone = Math.floor(
+        current.messages / 25
+    );
 
     const joined = new Date(current.joined_at);
     const now = new Date();
@@ -207,7 +217,9 @@ function updatePassiveTrust(user) {
         (now - joined) / (1000 * 60 * 60 * 24)
     );
 
-    const timeMilestone = Math.floor(daysSinceJoining / 7);
+    const timeMilestone = Math.floor(
+        daysSinceJoining / 7
+    );
 
     const earnedMilestones =
         messageMilestone + timeMilestone;
@@ -244,6 +256,52 @@ function getUser(userId) {
         .get(userId);
 }
 
+
+// ================================================================
+// 🚫 GUILD BLACKLIST SYSTEM
+// ================================================================
+
+function blacklistGuild(guild) {
+    db.prepare(`
+        INSERT OR REPLACE INTO blacklisted_guilds (
+            guild_id,
+            guild_name,
+            blacklisted_at
+        )
+        VALUES (?, ?, ?)
+    `).run(
+        guild.id,
+        guild.name,
+        new Date().toISOString()
+    );
+}
+
+function unblacklistGuild(guildId) {
+    db.prepare(`
+        DELETE FROM blacklisted_guilds
+        WHERE guild_id = ?
+    `).run(guildId);
+}
+
+function isGuildBlacklisted(guildId) {
+    return Boolean(
+        db.prepare(`
+            SELECT guild_id
+            FROM blacklisted_guilds
+            WHERE guild_id = ?
+        `).get(guildId)
+    );
+}
+
+function getBlacklistedGuilds() {
+    return db.prepare(`
+        SELECT *
+        FROM blacklisted_guilds
+        ORDER BY blacklisted_at DESC
+    `).all();
+}
+
+
 module.exports = {
     ensureUser,
     recordMessage,
@@ -253,5 +311,10 @@ module.exports = {
     recordHelp,
     recordBark,
     updatePassiveTrust,
-    getUser
+    getUser,
+
+    blacklistGuild,
+    unblacklistGuild,
+    isGuildBlacklisted,
+    getBlacklistedGuilds
 };
