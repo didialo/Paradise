@@ -301,6 +301,35 @@ function getBlacklistedGuilds() {
     `).all();
 }
 
+function getStats() {
+    const stats = db.prepare(`
+        SELECT
+            COUNT(*) AS users,
+            COALESCE(SUM(messages), 0) AS messages,
+            COALESCE(SUM(commands), 0) AS commands,
+            COALESCE(SUM(wanted), 0) AS wanted,
+            COALESCE(SUM(rants), 0) AS rants,
+            COALESCE(SUM(helps), 0) AS helps,
+            COALESCE(SUM(barks), 0) AS barks
+        FROM users
+    `).get();
+
+    const blacklisted = db.prepare(`
+        SELECT COUNT(*) AS count
+        FROM blacklisted_guilds
+    `).get();
+
+    return {
+        users: Number(stats.users || 0),
+        messages: Number(stats.messages || 0),
+        commands: Number(stats.commands || 0),
+        wanted: Number(stats.wanted || 0),
+        rants: Number(stats.rants || 0),
+        helps: Number(stats.helps || 0),
+        barks: Number(stats.barks || 0),
+        blacklistedGuilds: Number(blacklisted.count || 0)
+    };
+}
 
 module.exports = {
     ensureUser,
@@ -312,6 +341,7 @@ module.exports = {
     recordBark,
     updatePassiveTrust,
     getUser,
+    getStats,
 
     blacklistGuild,
     unblacklistGuild,

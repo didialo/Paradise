@@ -1,4 +1,7 @@
-const { SlashCommandBuilder } = require('discord.js');
+const {
+    SlashCommandBuilder,
+    MessageFlags
+} = require('discord.js');
 
 const OWNER_ID = process.env.OWNER_ID;
 
@@ -11,18 +14,23 @@ module.exports = {
         if (interaction.user.id !== OWNER_ID) {
             await interaction.reply({
                 content: 'You do not have permission to use this command.',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
+
             return;
         }
+
+        await interaction.deferReply({
+            flags: MessageFlags.Ephemeral
+        });
 
         const guilds = interaction.client.guilds.cache;
 
         if (guilds.size === 0) {
-            await interaction.reply({
-                content: 'Dude is not in any servers.',
-                ephemeral: true
-            });
+            await interaction.editReply(
+                'Dude is not in any servers.'
+            );
+
             return;
         }
 
@@ -38,11 +46,15 @@ module.exports = {
         let current = '';
 
         for (const line of lines) {
-            if ((current + '\n\n' + line).length > 1900) {
+            const next = current
+                ? `${current}\n\n${line}`
+                : line;
+
+            if (next.length > 1900) {
                 chunks.push(current);
                 current = line;
             } else {
-                current += current ? `\n\n${line}` : line;
+                current = next;
             }
         }
 
@@ -50,17 +62,15 @@ module.exports = {
             chunks.push(current);
         }
 
-        await interaction.reply({
-            content:
-                `**🏜️ PARADISE SERVERS — ${guilds.size} TOTAL**\n\n` +
-                chunks[0],
-            ephemeral: true
-        });
+        await interaction.editReply(
+            `**🏜️ PARADISE SERVERS — ${guilds.size} TOTAL**\n\n` +
+            chunks[0]
+        );
 
         for (const chunk of chunks.slice(1)) {
             await interaction.followUp({
                 content: chunk,
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     }

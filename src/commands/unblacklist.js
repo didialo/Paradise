@@ -1,4 +1,7 @@
-const { SlashCommandBuilder } = require('discord.js');
+const {
+    SlashCommandBuilder,
+    MessageFlags
+} = require('discord.js');
 
 const {
     unblacklistGuild,
@@ -22,8 +25,9 @@ module.exports = {
         if (interaction.user.id !== OWNER_ID) {
             await interaction.reply({
                 content: 'You do not have permission to use this command.',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
+
             return;
         }
 
@@ -34,8 +38,9 @@ module.exports = {
             await interaction.reply({
                 content:
                     `\`${serverId}\` is not currently blacklisted.`,
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
+
             return;
         }
 
@@ -47,7 +52,7 @@ module.exports = {
         await interaction.reply({
             content:
                 `✅ Server \`${serverId}\` has been removed from the blacklist.`,
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
 
         if (guild) {

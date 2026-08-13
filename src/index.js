@@ -55,7 +55,6 @@ for (const file of commandFiles) {
 // ================================================================
 
 client.on('guildMemberAdd', async member => {
-    // Blacklisted servers get no Paradise behavior.
     if (isGuildBlacklisted(member.guild.id)) {
         return;
     }
@@ -97,7 +96,9 @@ client.once('clientReady', () => {
         status: 'idle'
     });
 
-    console.log(`Currently in ${client.guilds.cache.size} server(s).`);
+    console.log(
+        `Currently in ${client.guilds.cache.size} server(s).`
+    );
 });
 
 
@@ -124,7 +125,8 @@ client.on('interactionCreate', async interaction => {
         return;
     }
 
-    const command = client.commands.get(interaction.commandName);
+    const command =
+        client.commands.get(interaction.commandName);
 
     if (!command) return;
 
@@ -133,10 +135,16 @@ client.on('interactionCreate', async interaction => {
     try {
         await command.execute(interaction);
     } catch (error) {
-        console.error(`Command error in ${interaction.commandName}:`);
+        console.error(
+            `Command error in ${interaction.commandName}:`
+        );
+
         console.error(error);
 
-        if (!interaction.replied && !interaction.deferred) {
+        if (
+            !interaction.replied &&
+            !interaction.deferred
+        ) {
             await interaction.reply({
                 content:
                     "Great. Something broke. Don't look at me.",
@@ -164,32 +172,104 @@ const flirtCooldowns = new Map();
 
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
+
+
+    // ============================================================
+    // 🔗 ONLY PREFIX COMMAND — INVITE DUDE
+    // ============================================================
+
+    if (
+        message.content
+            .trim()
+            .toLowerCase() === 'p!invite'
+    ) {
+        const inviteUrl =
+            'https://discord.com/oauth2/authorize?client_id=1536711351047557170&permissions=8&integration_type=0&scope=bot+applications.commands';
+
+        await message.reply({
+            content:
+                `🏜️ **Invite Dude to your server**\n\n` +
+                `[➜ Add Dude to a server](${inviteUrl})`,
+            allowedMentions: {
+                parse: []
+            }
+        }).catch(() => {});
+
+        return;
+    }
+
+
     if (!message.guild) return;
 
-    // 🚫 Completely ignore blacklisted servers.
+
+    // ============================================================
+    // 🚫 BLACKLISTED SERVERS
+    // ============================================================
+
     if (isGuildBlacklisted(message.guild.id)) {
         return;
     }
 
+
     recordMessage(message.author);
     updatePassiveTrust(message.author);
 
-    const content = message.content.toLowerCase();
-    const user = getUser(message.author.id);
+    const content =
+        message.content.toLowerCase();
+
+// ============================================================
+// 🏓 PING
+// ============================================================
+
+if (content === 'p!ping') {
+    const sentAt = Date.now();
+
+    const pingMessage = await message.reply(
+        '🏓 **Pinging Paradise...**'
+    );
+
+    const roundTrip = Date.now() - sentAt;
+
+    const websocketPing = client.ws.ping;
+
+    const websocketText =
+        websocketPing >= 0
+            ? `\`${Math.round(websocketPing)}ms\``
+            : '`measuring...`';
+
+    await pingMessage.edit(
+        `🏓 **Pong.**\n` +
+        `> **Roundtrip:** \`${roundTrip}ms\`\n` +
+        `> **WebSocket:** ${websocketText}`
+    );
+
+    return;
+}
+
+    const user =
+        getUser(message.author.id);
 
 
     // ============================================================
     // 💕 SPECIAL PERSON
     // ============================================================
 
-    if (message.author.id === FLIRT_USER_ID && user) {
+    if (
+        message.author.id === FLIRT_USER_ID &&
+        user
+    ) {
         const now = Date.now();
-        const lastFlirt = flirtCooldowns.get(message.author.id);
 
-        // Don't flirt constantly.
+        const lastFlirt =
+            flirtCooldowns.get(message.author.id);
+
         // Minimum cooldown: 2 minutes.
-        if (!lastFlirt || now - lastFlirt >= 2 * 60 * 1000) {
-            const trust = user.trust ?? 60;
+        if (
+            !lastFlirt ||
+            now - lastFlirt >= 2 * 60 * 1000
+        ) {
+            const trust =
+                user.trust ?? 60;
 
             let chance = 0.12;
 
@@ -213,7 +293,7 @@ client.on('messageCreate', async message => {
                 chance += 0.15;
             }
 
-            // Messages that invite affection get a higher chance.
+            // Messages that invite affection.
             if (
                 /\b(love|miss|cute|pretty|handsome|sweet|kiss|hug|date|like you|love you)\b/i
                     .test(content)
@@ -222,15 +302,22 @@ client.on('messageCreate', async message => {
             }
 
             if (Math.random() < chance) {
-                const response = getFlirtResponse(
-                    message.author.username,
-                    trust,
-                    content
+                const response =
+                    getFlirtResponse(
+                        message.author.username,
+                        trust,
+                        content
+                    );
+
+                flirtCooldowns.set(
+                    message.author.id,
+                    now
                 );
 
-                flirtCooldowns.set(message.author.id, now);
+                await message
+                    .reply(response)
+                    .catch(() => {});
 
-                await message.reply(response).catch(() => {});
                 return;
             }
         }
@@ -246,19 +333,25 @@ client.on('messageCreate', async message => {
     if (/\bmonday\b/.test(content)) {
         category = 'monday';
 
-    } else if (/\b(good morning|morning)\b/.test(content)) {
+    } else if (
+        /\b(good morning|morning)\b/.test(content)
+    ) {
         category = 'morning';
 
-    } else if (/\b(help|can someone help)\b/.test(content)) {
+    } else if (
+        /\b(help|can someone help)\b/.test(content)
+    ) {
         category = 'help';
 
     } else if (
-        /\b(fucked up|messed up|screwed up|my bad)\b/.test(content)
+        /\b(fucked up|messed up|screwed up|my bad)\b/
+            .test(content)
     ) {
         category = 'mistake';
 
     } else if (
-        /\b(what happened|wtf|chaos|disaster)\b/.test(content)
+        /\b(what happened|wtf|chaos|disaster)\b/
+            .test(content)
     ) {
         category = 'chaos';
     }
@@ -350,7 +443,9 @@ client.on('messageCreate', async message => {
         Date.now()
     );
 
-    await message.reply(response).catch(() => {});
+    await message
+        .reply(response)
+        .catch(() => {});
 });
 
 
@@ -411,7 +506,9 @@ function getFlirtResponse(
 
 
     // 😳 Missing
-    if (/\b(miss|missed)\b/i.test(content)) {
+    if (
+        /\b(miss|missed)\b/i.test(content)
+    ) {
         responses.push(
             `...You missed me? Because I definitely noticed you were gone. ♡`,
             `I missed you too. Don't make me say it twice. 💕`
@@ -420,7 +517,10 @@ function getFlirtResponse(
 
 
     // ❤️ Love
-    if (/\b(love you|i love you)\b/i.test(content)) {
+    if (
+        /\b(love you|i love you)\b/i
+            .test(content)
+    ) {
         responses.push(
             `...You can't just say things like that and expect me to stay composed. 💕`,
             `I... love you too, idiot. There. You happy now? ♡`,
@@ -431,7 +531,8 @@ function getFlirtResponse(
 
     // ✨ Compliments
     if (
-        /\b(cute|pretty|handsome|sweet)\b/i.test(content)
+        /\b(cute|pretty|handsome|sweet)\b/i
+            .test(content)
     ) {
         responses.push(
             `Oh? You think I'm cute? Keep talking. I'm listening. 👀`,
@@ -442,7 +543,9 @@ function getFlirtResponse(
 
 
     // 💋 Kisses
-    if (/\b(kiss|kiss me)\b/i.test(content)) {
+    if (
+        /\b(kiss|kiss me)\b/i.test(content)
+    ) {
         responses.push(
             `...You're bold today, aren't you? 😳`,
             `You really just asked Paradise that? ...Come here. ♡`,
