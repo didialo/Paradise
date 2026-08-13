@@ -47,7 +47,7 @@ Trust and other statistics are stored in SQLite, so they survive bot restarts.
 
 The `/bark` command is a completely serious and important part of Paradise.
 
-The creator receives a special response from Dude when barking.
+The creator receives a special response from Dude when barking, while other residents receive the standard bark response.
 
 Barking can also increase persistent trust.
 
@@ -107,6 +107,8 @@ Paradise currently provides these slash commands:
 Bark at Dude.
 
 Yes, this is a real command.
+
+The creator receives a special response; other users receive the standard response.
 
 ### `/dude`
 
