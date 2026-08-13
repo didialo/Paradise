@@ -46,6 +46,32 @@ for (const file of commandFiles) {
 }
 
 client.on('guildMemberAdd', async member => {
+    // 💕 Paradise has a favorite person...
+const FLIRT_USER_ID = '1257135233329922108';
+
+if (message.author.id === FLIRT_USER_ID) {
+    const flirtResponses = [
+        `Careful, ${message.author.username}. Keep looking at me like that and I might start getting ideas. ♡`,
+        `Oh? It's you. I was hoping you'd show up. Don't make me admit that. 💕`,
+        `You know, ${message.author.username}, you're looking dangerously cute today.`,
+        `There you are. I was wondering when you'd come back to bother me. ♡`,
+        `Honestly? Paradise gets a little nicer whenever you show up.`,
+        `Stop being so cute. I'm trying to maintain my reputation here. 🙄💕`,
+        `You keep talking to me like that and I'm going to start thinking you like me.`,
+        `...Why are you looking at me like that? You're making this difficult. ♡`,
+        `I could pretend I don't like seeing you here, but we'd both know that's a lie.`,
+        `You're lucky I like you, ${message.author.username}. Don't get used to hearing that. 💕`
+    ];
+
+    // Don't flirt every single time you speak.
+    if (Math.random() < 0.20) {
+        const response =
+            flirtResponses[Math.floor(Math.random() * flirtResponses.length)];
+
+        await message.reply(response).catch(() => {});
+        return;
+    }
+}
     const greetings = [
         `Oh, great. **${member.displayName}** just showed up.`,
         `Great. Another one. Welcome to Paradise, **${member.displayName}**.`,
@@ -105,6 +131,13 @@ client.on('interactionCreate', async interaction => {
 
 const responseCooldowns = new Map();
 
+// 💕 YUMESHIP PROTOCOL — Paradise's special relationship system
+// Only FLIRT_USER_ID receives romantic behavior.
+
+const FLIRT_USER_ID = '1257135233329922108';
+
+const flirtCooldowns = new Map();
+
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
     if (!message.guild) return;
@@ -113,6 +146,69 @@ client.on('messageCreate', async message => {
     updatePassiveTrust(message.author);
 
     const content = message.content.toLowerCase();
+    const user = getUser(message.author.id);
+
+    // ============================================================
+    // 💕 SPECIAL PERSON
+    // ============================================================
+
+    if (message.author.id === FLIRT_USER_ID && user) {
+        const now = Date.now();
+        const lastFlirt = flirtCooldowns.get(message.author.id);
+
+        // Don't flirt constantly.
+        // Minimum cooldown: 2 minutes.
+        if (!lastFlirt || now - lastFlirt >= 2 * 60 * 1000) {
+            const trust = user.trust ?? 60;
+
+            let chance = 0.12;
+
+            // Higher trust = more affectionate.
+            if (trust >= 90) {
+                chance = 0.30;
+            } else if (trust >= 80) {
+                chance = 0.25;
+            } else if (trust >= 70) {
+                chance = 0.20;
+            } else if (trust >= 60) {
+                chance = 0.16;
+            }
+
+            // Paradise is more likely to react when directly addressed.
+            const directlyAddressed =
+                message.mentions.has(client.user) ||
+                content.includes('paradise');
+
+            if (directlyAddressed) {
+                chance += 0.15;
+            }
+
+            // Certain messages practically invite a reaction.
+            if (
+                /\b(love|miss|cute|pretty|handsome|sweet|kiss|hug|date|like you|love you)\b/i
+                    .test(content)
+            ) {
+                chance += 0.20;
+            }
+
+            if (Math.random() < chance) {
+                const response = getFlirtResponse(
+                    message.author.username,
+                    trust,
+                    content
+                );
+
+                flirtCooldowns.set(message.author.id, now);
+
+                await message.reply(response).catch(() => {});
+                return;
+            }
+        }
+    }
+
+    // ============================================================
+    // 🧪 NORMAL PARADISE AUTOMATIC RESPONSES
+    // ============================================================
 
     let category = null;
 
@@ -141,29 +237,139 @@ client.on('messageCreate', async message => {
         return;
     }
 
-    const user = getUser(message.author.id);
+    let response = null;
 
-  let response;
+    if (user) {
+        const score =
+            (user.wanted * 5) +
+            (user.rants * 2) +
+            (user.commands * 0.25);
 
-if (user) {
-    const score =
-        (user.wanted * 5) +
-        (user.rants * 2) +
-        (user.commands * 0.25);
+        if (score >= 30) {
+            response = getWantedResponse(message.author.username);
+        } else if (score >= 20) {
+            response = getThreatResponse(message.author.username);
+        } else if (score >= 10) {
+            response = getMenaceResponse(message.author.username);
+        } else {
+            response = getRelationshipResponse(
+                message.author.username,
+                user.trust ?? 60
+            );
+        }
+    }
 
-    if (score >= 30) {
-        response = getWantedResponse(message.author.username);
-    } else if (score >= 20) {
-        response = getThreatResponse(message.author.username);
-    } else if (score >= 10) {
-        response = getMenaceResponse(message.author.username);
-    } else {
-        response = getRelationshipResponse(
+    if (!response && user) {
+        response = getMemoryResponse(
             message.author.username,
-            user.trust ?? 60
+            user
         );
     }
+
+    if (!response) {
+        const responses = automaticResponses[category];
+
+        if (responses && responses.length > 0) {
+            response =
+                responses[Math.floor(Math.random() * responses.length)];
+        }
+    }
+
+    if (!response) return;
+
+    responseCooldowns.set(cooldownKey, Date.now());
+
+    await message.reply(response).catch(() => {});
+});
+
+
+// ================================================================
+// 💕 FLIRTING
+// ================================================================
+
+function getFlirtResponse(username, trust, content) {
+    const responses = [];
+
+    // 💗 Normal affection
+    if (trust >= 50) {
+        responses.push(
+            `Oh, it's you. I was wondering when you'd show up. ♡`,
+            `You know, Paradise is a little nicer when you're around.`,
+            `There you are. I was starting to wonder where you went. 💕`,
+            `You really do have a habit of getting my attention, ${username}.`,
+            `I was going to ignore you, but... I suppose I can make an exception. ♡`,
+            `You keep showing up like this and I'm going to start thinking you like me.`,
+            `You're getting dangerously good at making me smile.`,
+            `Don't look at me like that. You're making this difficult.`
+        );
+    }
+
+    // 💕 High trust
+    if (trust >= 70) {
+        responses.push(
+            `You know I have a soft spot for you, right? Don't make me regret admitting that. 💕`,
+            `Honestly, ${username}? You're probably my favorite person here.`,
+            `I could talk to everyone else, but I'd rather talk to you.`,
+            `You're lucky you're cute. That's the only reason I'm letting you get away with this. ♡`,
+            `I missed you. There. I said it. Happy now?`,
+            `You always manage to make my day better. It's annoyingly adorable.`,
+            `If you keep being this sweet, I might actually fall for you.`
+        );
+    }
+
+    // 💘 Very high trust
+    if (trust >= 85) {
+        responses.push(
+            `Come here, you. I've got a little more attention to give you. 💕`,
+            `At this point I'm not even pretending I don't like you.`,
+            `${username}, you're ridiculously important to me. You know that?`,
+            `I think I've made my feelings pretty obvious by now... ♡`,
+            `If Paradise had a favorite person, it'd probably be you. Don't let that go to your head.`,
+            `You have no idea how much I like seeing your name pop up.`,
+            `Yeah, yeah. I like you. A lot. Happy? 💘`,
+            `You're kind of my weakness, ${username}.`
+        );
+    }
+
+    // 😳 Specific conversational triggers
+    if (/\b(miss|missed)\b/i.test(content)) {
+        responses.push(
+            `...You missed me? Because I definitely noticed you were gone. ♡`,
+            `I missed you too. Don't make me say it twice. 💕`
+        );
+    }
+
+    if (/\b(love you|i love you)\b/i.test(content)) {
+        responses.push(
+            `...You can't just say things like that and expect me to stay composed. 💕`,
+            `I... love you too, idiot. There. You happy now? ♡`,
+            `You're really trying to make me blush, aren't you?`
+        );
+    }
+
+    if (/\b(cute|pretty|handsome|sweet)\b/i.test(content)) {
+        responses.push(
+            `Oh? You think I'm cute? Keep talking. I'm listening. 👀`,
+            `Careful. Compliments are a dangerous game with me. ♡`,
+            `You're pretty cute yourself, you know.`
+        );
+    }
+
+    if (/\b(kiss|kiss me)\b/i.test(content)) {
+        responses.push(
+            `...You're bold today, aren't you? 😳`,
+            `You really just asked Paradise that? ...Come here. ♡`,
+            `Maybe. If you're nice. 💕`
+        );
+    }
+
+    return responses[Math.floor(Math.random() * responses.length)];
 }
+
+
+// ================================================================
+// 💞 RELATIONSHIP RESPONSES
+// ================================================================
 
 function getRelationshipResponse(username, trust) {
     let responses;
@@ -216,6 +422,11 @@ function getRelationshipResponse(username, trust) {
     return responses[Math.floor(Math.random() * responses.length)];
 }
 
+
+// ================================================================
+// 🧠 MEMORY
+// ================================================================
+
 function getMemoryResponse(username, user) {
     const responses = [];
 
@@ -262,24 +473,10 @@ function getMemoryResponse(username, user) {
     ];
 }
 
-if (!response && user) {
-    response = getMemoryResponse(
-        message.author.username,
-        user
-    );
-}
 
-    if (!response) {
-        const responses = automaticResponses[category];
-
-        response =
-            responses[Math.floor(Math.random() * responses.length)];
-    }
-
-    responseCooldowns.set(cooldownKey, Date.now());
-
-    await message.reply(response).catch(() => {});
-});
+// ================================================================
+// 😈 MENACE / THREAT / WANTED
+// ================================================================
 
 function getMenaceResponse(username) {
     const responses = [
@@ -292,6 +489,7 @@ function getMenaceResponse(username) {
     return responses[Math.floor(Math.random() * responses.length)];
 }
 
+
 function getThreatResponse(username) {
     const responses = [
         `${username}, I'm not getting involved in whatever you're planning.`,
@@ -302,6 +500,7 @@ function getThreatResponse(username) {
 
     return responses[Math.floor(Math.random() * responses.length)];
 }
+
 
 function getWantedResponse(username) {
     const responses = [

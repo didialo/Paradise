@@ -4,6 +4,9 @@ const {
     recordBark
 } = require('../database/database.js');
 
+// 💕 The one and only person allowed to get the special bark.
+const YUME_USER_ID = '1257135233329922108';
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('bark')
@@ -19,18 +22,19 @@ module.exports = {
             return;
         }
 
-        const isCreator =
-            interaction.user.id === process.env.OWNER_ID;
-
-        if (isCreator) {
+        // 💕 Special yumeship bark
+        if (interaction.user.id === YUME_USER_ID) {
             recordBark(interaction.user);
+
             await interaction.reply(
                 `**${interaction.user.username}**: 🐕 BARK BARK!\n\n` +
-                `Dude: *"...Okay. That's actually adorable."* ❤️`
+                `Dude: *"...You really are my favorite, aren't you?"* ❤️`
             );
+
             return;
         }
 
+        // Everyone else gets the normal response.
         await interaction.reply(
             `**${interaction.user.username}**: 🐕 BARK!\n\n` +
             `Dude: *"What the hell are you doing?"*`
