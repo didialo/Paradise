@@ -214,21 +214,26 @@ client.on('messageCreate', async message => {
     recordMessage(message.author);
     updatePassiveTrust(message.author);
 
-    const content =
-        message.content.toLowerCase();
+const content =
+    message.content.toLowerCase();
 
 // ============================================================
 // 🏓 PING
 // ============================================================
 
 if (content === 'p!ping') {
-    const sentAt = Date.now();
+    const startedAt = performance.now();
 
     const pingMessage = await message.reply(
-        '🏓 **Pinging Paradise...**'
+        '🏜️ **Hold on... checking the damage.**'
     );
 
-    const roundTrip = Date.now() - sentAt;
+    const roundTrip = Math.max(
+        1,
+        Math.round(
+            performance.now() - startedAt
+        )
+    );
 
     const websocketPing = client.ws.ping;
 
@@ -237,18 +242,80 @@ if (content === 'p!ping') {
             ? `\`${Math.round(websocketPing)}ms\``
             : '`measuring...`';
 
+    const uptimeSeconds = Math.floor(
+        client.uptime / 1000
+    );
+
+    const days = Math.floor(
+        uptimeSeconds / 86400
+    );
+
+    const hours = Math.floor(
+        (uptimeSeconds % 86400) / 3600
+    );
+
+    const minutes = Math.floor(
+        (uptimeSeconds % 3600) / 60
+    );
+
+    const seconds =
+        uptimeSeconds % 60;
+
+    const uptimeParts = [];
+
+    if (days) {
+        uptimeParts.push(`${days}d`);
+    }
+
+    if (hours || days) {
+        uptimeParts.push(`${hours}h`);
+    }
+
+    if (minutes || hours || days) {
+        uptimeParts.push(`${minutes}m`);
+    }
+
+    uptimeParts.push(`${seconds}s`);
+
+    const uptime =
+        uptimeParts.join(' ');
+
+    const memoryMB =
+        process.memoryUsage().rss /
+        1024 /
+        1024;
+
+    const os = require('os');
+
+    const processor =
+        os.cpus()?.[0]?.model ||
+        'Unknown processor';
+
+    const operatingSystem =
+        `${os.version()} · ${process.arch}`;
+
+    const nodeVersion =
+        process.version;
+
     await pingMessage.edit(
-        `🏓 **Pong.**\n` +
-        `> **Roundtrip:** \`${roundTrip}ms\`\n` +
-        `> **WebSocket:** ${websocketText}`
+        `🏜️ **PARADISE // THE DUDE IS ALIVE**\n\n` +
+        `> 🏓 **Roundtrip:** \`${roundTrip}ms\`\n` +
+        `> 📡 **WebSocket:** ${websocketText}\n\n` +
+        `**THE SITUATION**\n` +
+        `> **Uptime:** \`${uptime}\`\n` +
+        `> **Memory:** \`${memoryMB.toFixed(2)} MB\`\n\n` +
+        `**THE MACHINE**\n` +
+        `> **Node:** \`${nodeVersion}\`\n` +
+        `> **CPU:** \`${processor}\`\n` +
+        `> **OS:** \`${operatingSystem}\`\n\n` +
+        `*Everything is fine. Probably.* 🏜️`
     );
 
     return;
 }
 
-    const user =
-        getUser(message.author.id);
-
+const user =
+    getUser(message.author.id);
 
     // ============================================================
     // 💕 SPECIAL PERSON
