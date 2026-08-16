@@ -52,7 +52,11 @@ module.exports = {
         const event =
             events[Math.floor(Math.random() * events.length)];
 
-        await interaction.reply(
+        // Acknowledge the interaction immediately so Discord
+        // doesn't invalidate it if the command takes too long.
+        await interaction.deferReply();
+
+        await interaction.editReply(
             `🏜️ **PARADISE REPORT**\n\n` +
             `**EVENT**\n${event.event}\n\n` +
             `**DUDE'S REACTION**\n*${event.reaction}*`
