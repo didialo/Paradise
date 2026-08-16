@@ -49,12 +49,13 @@ module.exports = {
         .setDescription('See what is happening in Paradise.'),
 
     async execute(interaction) {
-        const event =
-            events[Math.floor(Math.random() * events.length)];
 
-        // Acknowledge the interaction immediately so Discord
-        // doesn't invalidate it if the command takes too long.
-        await interaction.deferReply();
+        const event =
+            events[
+                Math.floor(
+                    Math.random() * events.length
+                )
+            ];
 
         await interaction.editReply(
             `🏜️ **PARADISE REPORT**\n\n` +
