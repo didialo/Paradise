@@ -63,6 +63,16 @@ if (!columns.includes('barks')) {
     `);
 }
 
+db.exec(`
+    CREATE TABLE IF NOT EXISTS dude_conversations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_key TEXT NOT NULL,
+        role TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )
+`);
+
 function ensureUser(user) {
     const existing = db
         .prepare('SELECT user_id FROM users WHERE user_id = ?')
@@ -256,6 +266,46 @@ function getUser(userId) {
         .get(userId);
 }
 
+function addDudeConversationMessage(
+    conversationKey,
+    role,
+    content
+) {
+    db.prepare(`
+        INSERT INTO dude_conversations (
+            conversation_key,
+            role,
+            content,
+            created_at
+        )
+        VALUES (?, ?, ?, ?)
+    `).run(
+        conversationKey,
+        role,
+        content,
+        new Date().toISOString()
+    );
+}
+
+function getDudeConversationHistory(
+    conversationKey,
+    limit = 10
+) {
+    return db.prepare(`
+        SELECT
+            role,
+            content
+        FROM dude_conversations
+        WHERE conversation_key = ?
+        ORDER BY id DESC
+        LIMIT ?
+    `)
+        .all(
+            conversationKey,
+            limit
+        )
+        .reverse();
+}
 
 // ================================================================
 // 🚫 GUILD BLACKLIST SYSTEM
@@ -342,6 +392,9 @@ module.exports = {
     updatePassiveTrust,
     getUser,
     getStats,
+
+    addDudeConversationMessage,
+    getDudeConversationHistory,
 
     blacklistGuild,
     unblacklistGuild,
