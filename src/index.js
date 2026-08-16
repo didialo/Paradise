@@ -206,11 +206,54 @@ client.on(
     'interactionCreate',
     async interaction => {
 
+        // --------------------------------------------------------
+        // IGNORE NON-SLASH INTERACTIONS
+        // --------------------------------------------------------
+
         if (
             !interaction.isChatInputCommand()
         ) {
             return;
         }
+
+        // --------------------------------------------------------
+        // MEASURE INTERACTION AGE
+        // --------------------------------------------------------
+
+        const interactionAge =
+            Date.now() -
+            interaction.createdTimestamp;
+
+        console.log(
+            `[INTERACTION] /${interaction.commandName} received after ${interactionAge}ms`
+        );
+
+        // --------------------------------------------------------
+        // ACKNOWLEDGE IMMEDIATELY
+        // --------------------------------------------------------
+
+        try {
+
+            await interaction.deferReply();
+
+        } catch (error) {
+
+            console.error(
+                `[INTERACTION] Failed to acknowledge /${interaction.commandName}`
+            );
+
+            console.error(
+                `Interaction age: ${interactionAge}ms`
+            );
+
+            console.error(error);
+
+            return;
+        }
+
+        // --------------------------------------------------------
+        // BLACKLIST CHECK
+        // --------------------------------------------------------
 
         if (
             interaction.guildId &&
@@ -222,17 +265,18 @@ client.on(
         ) {
 
             await interaction
-                .reply({
+                .editReply({
                     content:
-                        '🚫 This server has been blacklisted from using Paradise.',
-
-                    flags:
-                        MessageFlags.Ephemeral
+                        '🚫 This server has been blacklisted from using Paradise.'
                 })
                 .catch(() => {});
 
             return;
         }
+
+        // --------------------------------------------------------
+        // FIND COMMAND
+        // --------------------------------------------------------
 
         const command =
             client.commands.get(
@@ -240,12 +284,39 @@ client.on(
             );
 
         if (!command) {
+
+            await interaction
+                .editReply({
+                    content:
+                        "Great. Something broke. Don't look at me."
+                })
+                .catch(() => {});
+
             return;
         }
 
-        recordCommand(
-            interaction.user
-        );
+        // --------------------------------------------------------
+        // RECORD COMMAND USAGE
+        // --------------------------------------------------------
+
+        try {
+
+            recordCommand(
+                interaction.user
+            );
+
+        } catch (error) {
+
+            console.error(
+                '[INTERACTION] Failed to record command usage:'
+            );
+
+            console.error(error);
+        }
+
+        // --------------------------------------------------------
+        // EXECUTE COMMAND
+        // --------------------------------------------------------
 
         try {
 
@@ -261,18 +332,18 @@ client.on(
 
             console.error(error);
 
+            // The interaction was already deferred,
+            // so edit the existing response.
+
             if (
-                !interaction.replied &&
-                !interaction.deferred
+                interaction.deferred &&
+                !interaction.replied
             ) {
 
                 await interaction
-                    .reply({
+                    .editReply({
                         content:
-                            "Great. Something broke. Don't look at me.",
-
-                        flags:
-                            MessageFlags.Ephemeral
+                            "Great. Something broke. Don't look at me."
                     })
                     .catch(() => {});
             }
